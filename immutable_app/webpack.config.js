@@ -6,6 +6,11 @@ const merge = require('webpack-merge');
 const webpack = require('webpack');
 const CleanPlugin = require('clean-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+// detect changes made to Webpack config and the projects files
+// and install the dependencies , modify package.json automatically.
+// Any dependecies within app => installed through --save(or -S)
+// Root level dependencies (packages needed by Webpack) => installed through --save-dev(or -D)
+const NpmInstallPlugin = require('npm-install-webpack-plugin');
 
 const pkg = require('./package.json');
 
@@ -30,7 +35,12 @@ const common = {
   entry: {
     app: PATHS.app
   },
+  // Add resolve.extensions.
+  // '' is needed to allow imports without an extension.
+  // Note the .'s before extensions as it will fail to match without!!!
   resolve: {
+    //resolve.extensions gets evaluated from left to right,
+    //we can use it to control which code gets loaded for given configuration
     extensions: ['', '.js', '.jsx']
   },
   output: {
@@ -38,9 +48,13 @@ const common = {
     filename: '[name].js'
   },
   module: {
+    // Set up jsx. This accepts js too thanks to RegExp
     loaders: [
       {
         test: /\.jsx?$/,
+        // Enable caching for improved performance during development
+        // It uses default OS directory by default. If you need something
+        // more custom, pass a path to it. I.e., babel?cacheDirectory=<path>
         loaders: ['babel?cacheDirectory'],
         include: PATHS.app
       }
@@ -87,12 +101,13 @@ if(TARGET === 'start' || !TARGET) {
       port: ENV.port
     },
     module: {
+      // loaders(transformations) are evaluated from right to left.
+      // from bottom to top
       loaders: [
         // Define development specific CSS setup
         {
           // Test expects a javascript RegExp!
           test: /\.css$/,
-          // loaders(transformations) are evaluated from right to left.
           // css-loader resolve @import and url statements in our CSS files.
           // style-loader deals with require statements in our javascript files.
           loaders: ['style', 'css'],
@@ -104,7 +119,10 @@ if(TARGET === 'start' || !TARGET) {
       ]
     },
     plugins: [
-      new webpack.HotModuleReplacementPlugin()
+      new webpack.HotModuleReplacementPlugin(),
+      new NpmInstallPlugin({
+        save: true // --save
+      })
     ]
   });
 }
