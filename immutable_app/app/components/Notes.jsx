@@ -8,7 +8,7 @@ class Notes extends React.Component {
   render() {
     const {notes, move, onValueClick, onEdit, onDelete} = this.props;
 
-    return (<ul className="notes">{notes.map((note) =>
+    return (<ul className="notes">{notes.filter( Boolean ).map((note) =>
       <Note className="note" id={note.get('id')} key={note.get('id')}
         editing={note.get('editing')} onMove={move}>
         <Editable
