@@ -1,4 +1,6 @@
 const path = require('path');
+
+// plugin to generate static html
 const HtmlwebpackPlugin = require('html-webpack-plugin');
 const merge = require('webpack-merge');
 const webpack = require('webpack');
@@ -14,6 +16,7 @@ const PATHS = {
   style: path.join(__dirname, 'app/main.css'),
   test: path.join(__dirname, 'tests')
 };
+
 const ENV = {
   host: process.env.HOST || 'localhost',
   port: process.env.PORT || 8080
@@ -21,6 +24,8 @@ const ENV = {
 
 process.env.BABEL_ENV = TARGET;
 
+// Entry accepts a path or an object of entries.
+// We'll be using the latter form given it's convinent wiht more complex configurations.
 const common = {
   entry: {
     app: PATHS.app
@@ -51,23 +56,33 @@ const common = {
   ]
 };
 
+// Default configuration -- development
 if(TARGET === 'start' || !TARGET) {
   module.exports = merge(common, {
     entry: {
       style: PATHS.style
     },
+    // debug: see where an error was raised.
     devtool: 'eval-source-map',
     devServer: {
-      historyApiFallback: true,
+      //contentBase: PATHS.build,
+
+      // Enable history API fallback so HTML5 History API based
+      // routing works. This is a good default that will come
+      // in handy in more complicated setups.
+      historyApiFallback: true, // convenient for advanced routing
       hot: true,
-      inline: true,
+      inline: true, // needed by HMR
       progress: true,
 
       // display only errors to reduce the amount of output
       stats: 'errors-only',
 
-      // parse host and port from env so this is easy
-      // to customize
+      // parse host and port from env so this is easy to customize
+      // If you use Vagrant or Cloud9, set
+      // host: process.env.HOST || '0.0.0.0';
+      //
+      // 0.0.0.0 is available to all network devices unlike default localhost
       host: ENV.host,
       port: ENV.port
     },
@@ -75,8 +90,15 @@ if(TARGET === 'start' || !TARGET) {
       loaders: [
         // Define development specific CSS setup
         {
+          // Test expects a javascript RegExp!
           test: /\.css$/,
+          // loaders(transformations) are evaluated from right to left.
+          // css-loader resolve @import and url statements in our CSS files.
+          // style-loader deals with require statements in our javascript files.
           loaders: ['style', 'css'],
+          // Include accepts either a path or an array of paths.
+          // If include isn't set, all files within base directory will be traversed.
+          // => bad performance.
           include: PATHS.app
         }
       ]
